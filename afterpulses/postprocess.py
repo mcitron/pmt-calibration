@@ -9,8 +9,8 @@ t0 = 140
 minamp = 50
 # tend   = 290
 
-Nevt = 100
-plotFirst = 100
+Nevt = -1
+plotFirst = 0
 
 f = r.TFile(sys.argv[1])
 t = f.Get("Events")
@@ -21,11 +21,12 @@ outdir = "/home/users/bemarsh/public_html/milliqan/aps/{0}".format(sys.argv[1].s
 os.system("mkdir -p "+outdir)
 os.system("cp /home/users/bemarsh/scripts/index.php "+outdir)
 
-if plotFirst>0:
-    plt.figure(1, figsize=(12,9))
-
 print "Outputting to:", outname
 fout = r.TFile(outname, "RECREATE")
+
+if plotFirst>0:
+    print "Plotting to:", outdir
+    plt.figure(1, figsize=(12,9))
 
 times = np.zeros(1024, dtype=float)
 voltages = np.zeros(1024, dtype=float)
@@ -46,7 +47,7 @@ AP_lowbound = np.zeros(100, dtype=float)
 AP_highbound = np.zeros(100, dtype=float)
 
 if Nevt<0:
-    Nevt = nt.GetEntries()
+    Nevt = t.GetEntries()
 t.SetBranchStatus("*", 0)
 t.SetBranchStatus("times", 1)
 t.SetBranchStatus("voltages", 1)
@@ -70,7 +71,7 @@ b_AP_height = nt.Branch("afterpulse_height", AP_height, "afterpulse_height[n_aft
 b_AP_lowbound = nt.Branch("afterpulse_lowbound", AP_lowbound, "afterpulse_lowbound[n_afterpulses]/D")
 b_AP_highbound = nt.Branch("afterpulse_highbound", AP_highbound, "afterpulse_highbound[n_afterpulses]/D")
 
-template = pickle.load(open("../../peak_templates/template_peak_70_75_1GHz.pkl", 'rb'))[::2]
+template = pickle.load(open("../peak_templates/template_peak_70_75_1GHz.pkl", 'rb'))[::2]
 template /= np.sum(template)
 
 for ievt in range(Nevt):

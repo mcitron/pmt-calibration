@@ -19,7 +19,7 @@ tend   = 290
 # tend   = 390
 
 doTiming = True
-waveForm = False
+
 if doTiming:
     template = pickle.load(open("peak_templates/template_peak_70_75_0p7GHz.pkl", 'rb'))[::2]
     template /= np.sum(template)
@@ -99,52 +99,6 @@ for ievt in range(Nevt):
         smoothed_max[0] = cmax
         tmax[0] = convolved_time[icmax]
 
-    if waveForm:
-        plt.clf()
-        plt.plot(times,vs,color="red")
-        plt.axhspan(offset[0]-noise[0],offset[0]+noise[0],color='red',alpha=0.3)
-        plt.axvline(tstart,ls="dashed",color="black")
-        plt.axvline(tend,ls="dashed",color="black")
-        plt.axhline(offset[0],ls="dashed",color="black")
-        plt.axhline(offset[0]-noise[0],ls="dashed",color="black",lw=1.2)
-        plt.axhline(offset[0]+noise[0],ls="dashed",color="black",lw=1.2)
-        plt.xlim(0,1024)
-        plt.xlabel('Time (ns)')
-        plt.ylim(-10,20)
-        plt.ylabel('Vout (mV)')
-        peaks = findAPs(times,vs,offset[0],noise[0],template,tstart,tend,plot=False,outName=outdir+"/{0:05d}.png".format(i))
-        shift=0
-        for n in range(len(peaks)-1):
-            if peaks[n]>280:
-                peaks=peaks[n:]
-                break
-        for n in range(len(peaks)):
-            for x in range(peaks[n]-20,peaks[n]+20):
-                if x>1023:
-                    x=1023
-                if vs[x]>vs[peaks[n]]:
-                    shift+=1
-                    peaks[n]=x
-            if n-shift>len(peaks):
-                if vs[n] < noise[0]+offset[0]:
-                    peaks=np.delete(peaks,n)
-        plt.grid(True)
-        plt.title("waveform "+str(i))
-        plt.plot(times[peaks],vs[peaks],"x",markersize=10,markeredgewidth=3,color='Blue',alpha=0.5)
-        for peak in peaks:
-            n_APs[0] +=1 
-
-        for j in range(len(peaks)):
-            end1=peaks[j]
-            end2=peaks[j]
-            while vs[end1]>offset[0]:
-                end1-=1
-            while vs[end2]>offset[0] and end2<1023:
-                end2+=1
-            plt.axvspan(times[end1],times[end2],ymin=0,ymax=vs[xv],color="grey",alpha=0.5)
-            AP_time[j] = times[peaks[j]]
-            AP_area[j] = np.trapz(vs[end1:end2] - offset[0], times[end1:end2])
-        plt.savefig(outdir+"wavform "+str(i)+'.png',dpi=90)
     b_area.Fill()
     b_offset.Fill()
     b_noise.Fill()

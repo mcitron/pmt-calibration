@@ -97,7 +97,7 @@ TH1D* SPE::Generate() {
 
     // Load template
     double dt = 1.0 / input_sample_freq;
-    TH1D* h_template = (TH1D*)template_file->Get("temp")->Clone("h_template");
+    TH1D* h_template = (TH1D*)template_file->Get("temp");//->Clone("h_template");
     int length = h_template->GetSize();
     double *template_y = new double[length];
     double *template_x = new double[length];
@@ -116,6 +116,7 @@ TH1D* SPE::Generate() {
     }
     // Fill voltages
     TH1D* h_volts = new TH1D("spe", "Generated Signal", new_length, 0, times[new_length-1] + times[1]-times[0]);
+    h_volts->SetDirectory(0);
     int j = 0; // index of template_x, template_y
     for (unsigned int i = 0; i < new_length; i++) {
         while (j < length && template_x[j] < times[i]) {

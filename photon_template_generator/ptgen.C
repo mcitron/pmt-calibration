@@ -16,7 +16,6 @@ class SPE {
      *     - can be changed by specifying another path
      *   template_file: TFile containing signal template
      *     - can be changed by specifying another path
-     *   model: defines which PMT to use (defined above)
      *   output_sample_freq: sampling frequency of the output waveform (GHz)
      *   verbose: toggle printout of computed areas
      */

@@ -12,6 +12,10 @@ class SPE {
     /* Generate a SPE signal
      *
      * Member Variable Definitions:
+     *   areas_file: TFile containing area distribution histogram
+     *     - can be changed by specifying another path
+     *   template_file: TFile containing signal template
+     *     - can be changed by specifying another path
      *   model: defines which PMT to use (defined above)
      *   output_sample_freq: sampling frequency of the output waveform (GHz)
      *   verbose: toggle printout of computed areas
@@ -28,11 +32,10 @@ class SPE {
         SPE();
         SPE(TString, TString, double, double, bool);
         // Setters
+        void SetAreasFile(TString);
         void SetTemplateFile(TString);
         void SetInputRate(double);
         void SetOutputSampleFreq(double);
-        void SetNoise(double);
-        void SetExtend(double);
         void SetVerbose(bool);
         // Utility
         TH1D* Render();
@@ -55,6 +58,10 @@ SPE::SPE(TString areas_path, TString template_path, double new_input_rate, doubl
     verbose = is_verbose;
 }
 // Setters
+void SPE::SetAreasFile(TString areas_path) {
+    areas_file = new TFile(areas_path); 
+    return;
+}
 void SPE::SetTemplateFile(TString template_path) {
     template_file = new TFile(template_path);
     return;

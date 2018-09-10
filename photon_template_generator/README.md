@@ -4,8 +4,7 @@
 2. Hamamatsu R7725 - `"r7725"`
 
 ## Usage
-SPEGen Public Member Functions:
-```
+```cpp
 SPEGen.h:
     SPE(); // Default Constructor
     SPE(TString pmt_name, double output_sample_freq, bool is_verbose);

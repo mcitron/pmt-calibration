@@ -4,6 +4,52 @@
 // Library Includes
 #include <iostream>
 #include <cmath>
+#include <stdlib.h>
+
+struct PMT {
+    
+    TFile* areas_file;
+    TFile* template_file;
+    double input_sample_freq;
+
+    PMT();
+    ~PMT();
+    PMT(TString);
+
+};
+PMT::PMT() {
+    // the R878 is the default PMT
+    areas_file = new TFile("assets/r878_areas.root"); 
+    template_file = new TFile("assets/template_peak_r878_70_75_2GHz.root");
+    input_sample_freq = 2.5;
+}
+PMT::PMT(TString pmt_name) {
+    pmt_name.ToLower();
+    if (pmt_name == "r878") {
+        areas_file = new TFile("assets/r878_areas.root"); 
+        template_file = new TFile("assets/template_peak_70_75_2GHz.root");
+        input_sample_freq = 2.5;
+    }
+    else if (pmt_name == "r7725") {
+        areas_file = new TFile("assets/r7725_areas.root"); 
+        template_file = new TFile("assets/template_peak_r7725_400_550_1GHz.root");
+        input_sample_freq = 1.0;
+    }
+    else {
+        std::cout << pmt_name << " not supported." << std::endl;
+        exit(0);
+    }
+}
+PMT::~PMT() {
+    if (areas_file != NULL) {
+        areas_file->Close();
+        delete areas_file;
+    }
+    if (template_file != NULL) {
+        template_file->Close();
+        delete template_file;
+    }
+}
 
 class SPE {
 
@@ -18,9 +64,7 @@ class SPE {
      *   verbose: toggle printout of computed areas
      */
 
-    TFile* areas_file;
-    TFile* template_file;
-    double input_sample_freq;
+    PMT* pmt;
     double output_sample_freq;
     bool verbose;
 
@@ -28,7 +72,7 @@ class SPE {
         // Constructors
         SPE();
        ~SPE();
-        SPE(TString, TString, double, double, bool);
+        SPE(TString, double, bool);
         // Setters
         void SetAreasFile(TString);
         void SetTemplateFile(TString);
@@ -41,49 +85,36 @@ class SPE {
 };
 // Default Constructor
 SPE::SPE() {
-    areas_file = new TFile("assets/r878_areas.root"); 
-    template_file = new TFile("assets/template_peak_70_75_2GHz.root");
-    input_sample_freq = 2.5;
+    pmt = new PMT("r878");
     output_sample_freq = 2.0;
     verbose = false;
 }
 // Overload Constructor
-SPE::SPE(TString areas_path, TString template_path, double new_input_rate, double new_output_sample_freq, bool is_verbose) {
-    areas_file = new TFile(areas_path); 
-    template_file = new TFile(template_path);
-    input_sample_freq = new_input_rate;
+SPE::SPE(TString pmt_name, double new_output_sample_freq, bool is_verbose) {
+    pmt = new PMT(pmt_name);
     output_sample_freq = new_output_sample_freq;
     verbose = is_verbose;
 }
-
-SPE::~SPE(){
-    if(areas_file != NULL){
-        areas_file->Close();
-        delete areas_file;
-    }
-    if(template_file != NULL){
-        template_file->Close();
-        delete template_file;
-    }
-}
+// Destructor
+SPE::~SPE() {}
 
 // Setters
 void SPE::SetAreasFile(TString areas_path) {
-    if(areas_file != NULL){
-        areas_file->Close();
-        delete areas_file;
+    if(pmt->areas_file != NULL){
+        pmt->areas_file->Close();
+        delete pmt->areas_file;
     }
-    areas_file = new TFile(areas_path); 
+    pmt->areas_file = new TFile(areas_path); 
 }
 void SPE::SetTemplateFile(TString template_path) {
-    if(template_file != NULL){
-        template_file->Close();
-        delete template_file;
+    if(pmt->template_file != NULL){
+        pmt->template_file->Close();
+        delete pmt->template_file;
     }
-    template_file = new TFile(template_path);
+    pmt->template_file = new TFile(template_path);
 }
 void SPE::SetInputSampleFreq(double new_input_rate) {
-    input_sample_freq = new_input_rate;    
+    pmt->input_sample_freq = new_input_rate;    
 }
 void SPE::SetOutputSampleFreq(double new_output_sample_freq) {
     output_sample_freq = new_output_sample_freq;    
@@ -96,8 +127,8 @@ void SPE::SetVerbose(bool is_verbose) {
 TH1D* SPE::Generate() {
 
     // Load template
-    double dt = 1.0 / input_sample_freq;
-    TH1D* h_template = (TH1D*)template_file->Get("temp");//->Clone("h_template");
+    double dt = 1.0 / pmt->input_sample_freq;
+    TH1D* h_template = (TH1D*)pmt->template_file->Get("temp");//->Clone("h_template");
     int length = h_template->GetSize();
     double *template_y = new double[length];
     double *template_x = new double[length];
@@ -135,7 +166,7 @@ TH1D* SPE::Generate() {
     double prenorm_area = h_volts->Integral();
 
     // Load areas
-    TH1D* h_areas = (TH1D*)areas_file->Get("ht");
+    TH1D* h_areas = (TH1D*)pmt->areas_file->Get("ht");
     for (unsigned int i = 0; i < h_areas->GetSize(); i++) {
         if (h_areas->GetBinContent(i) < 0) {
             h_areas->SetBinContent(i, 0);

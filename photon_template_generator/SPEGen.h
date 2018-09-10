@@ -27,7 +27,7 @@ PMT::PMT(TString pmt_name) {
     pmt_name.ToLower();
     if (pmt_name == "r878") {
         areas_file = new TFile("assets/r878_areas.root"); 
-        template_file = new TFile("assets/template_peak_70_75_2GHz.root");
+        template_file = new TFile("assets/template_peak_r878_70_75_2GHz.root");
         input_sample_freq = 2.5;
     }
     else if (pmt_name == "r7725") {

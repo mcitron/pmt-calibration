@@ -12,9 +12,10 @@ import json
 import numpy as np
 import ROOT as r
 
-# name = "r878b_1450V_2p7V_20ns_300Hz_100000evnts_v4"
+name = "r878_Helm0p0ALong_1450V_1p92V_13ns_300Hz_50000evnts"
 # name = "no_pmt_fixtrig_300Hz_20000"
-name = "afterpulses/r878_1450V_2p7V_13ns_300Hz_0p6GHz_200000evnts"
+# name = "afterpulses/r7725_1450V_2p4V_13ns_300Hz_1p0GHz_500000evnts"
+# name = "r7725/r7725b_1500V_1p91V_13ns_300Hz_50000evnts"
 
 indir =  "/nfs-7/userdata/bemarsh/milliqan/pmt_calib/scope_output"
 outdir = "/nfs-7/userdata/bemarsh/milliqan/pmt_calib/processed"
@@ -157,7 +158,7 @@ while True:
         t.Fill()
 
 print "Measured sampling rate: {0:.2f} GHz".format(1.0/np.mean(rates))
-# t.Write()
+t.Write()
 fout.Close()
 
 

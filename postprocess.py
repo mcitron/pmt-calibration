@@ -9,8 +9,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cPickle as pickle
 
-tstart = 140
-tend   = 290
+tstart = 230
+tend   = 330
 
 # tstart = 200
 # tend   = 310
@@ -18,10 +18,13 @@ tend   = 290
 # tstart = 280
 # tend   = 390
 
-doTiming = True
+# determine the pulse time/width and store in tree
+# (fairly time-consuming)
+doTiming = False
 
 if doTiming:
-    template = pickle.load(open("peak_templates/template_peak_70_75_0p7GHz.pkl", 'rb'))[::2]
+    # template = pickle.load(open("peak_templates/template_peak_70_75_2GHz.pkl", 'rb'))[::2]
+    template = pickle.load(open("peak_templates/template_peak_r7725_400_550_1GHz.pkl", 'rb'))[::1]
     template /= np.sum(template)
 
 f = r.TFile(sys.argv[1], "UPDATE")
@@ -35,6 +38,7 @@ noise = np.array([0], dtype=float)
 smoothed_max = np.array([0], dtype=float)
 tmax = np.array([0], dtype=float)
 thalfmax = np.array([0], dtype=float)
+fwhm = np.array([0], dtype=float)
 
 
 t.SetBranchStatus("*", 0)
@@ -50,6 +54,7 @@ b_noise = nt.Branch("noise", noise, "noise/D")
 b_smoothed_max = nt.Branch("smoothed_max", smoothed_max, "smoothed_max/D")
 b_tmax = nt.Branch("tmax", tmax, "tmax/D")
 b_thalfmax = nt.Branch("thalfmax", thalfmax, "thalfmax/D")
+b_fwhm = nt.Branch("fwhm", fwhm, "fwhm/D")
 
 Nevt = nt.GetEntries()
 for ievt in range(Nevt):
@@ -95,6 +100,14 @@ for ievt in range(Nevt):
             thalfmax[0] = -999
         else:
             thalfmax[0] = convolved_time[ihm] + (convolved_time[ihm+1]-convolved_time[ihm])/(convolved[ihm+1]-convolved[ihm]) * (cmax/2 - convolved[ihm])
+        ihm = icmax
+        while ihm <icend and convolved[ihm] > cmax/2:
+            ihm += 1
+        if cmax < 0.5 or convolved[ihm] > cmax/2 or thalfmax[0]<0:
+            fwhm[0] = -999
+        else:
+            fwhm[0] = convolved_time[ihm] + (convolved_time[ihm-1]-convolved_time[ihm])/(convolved[ihm-1]-convolved[ihm]) * (cmax/2 - convolved[ihm])
+            fwhm[0] -= thalfmax
 
         smoothed_max[0] = cmax
         tmax[0] = convolved_time[icmax]
@@ -105,6 +118,7 @@ for ievt in range(Nevt):
     b_smoothed_max.Fill()
     b_tmax.Fill()
     b_thalfmax.Fill()
+    b_fwhm.Fill()
 
 nt.Write("Events",r.TObject.kWriteDelete)
 f.Close()

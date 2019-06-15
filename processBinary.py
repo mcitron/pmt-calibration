@@ -12,25 +12,31 @@ import json
 import numpy as np
 import ROOT as r
 
-name = "r878_Helm0p0ALong_1450V_1p92V_13ns_300Hz_50000evnts"
-# name = "no_pmt_fixtrig_300Hz_20000"
+# name = "r878_Helm0p0ALong_1450V_1p92V_13ns_300Hz_50000evnts"
+name = "r878_1250V_1p55V_20ns_50000evnts"
 # name = "afterpulses/r7725_1450V_2p4V_13ns_300Hz_1p0GHz_500000evnts"
 # name = "r7725/r7725b_1500V_1p91V_13ns_300Hz_50000evnts"
 
 indir =  "/nfs-7/userdata/bemarsh/milliqan/pmt_calib/scope_output"
-outdir = "/nfs-7/userdata/bemarsh/milliqan/pmt_calib/processed"
+outdir = "/nfs-7/userdata/bemarsh/milliqan/pmt_calib/test"
 
 fin = indir+"/{0}.dat".format(name)
 fout = r.TFile(outdir+"/{0}.root".format(name), "RECREATE")
-ts = np.zeros(1024, dtype='float')
-vs = np.zeros(1024, dtype='float')
-t = r.TTree("Events","Events")
-t.Branch("times", ts, 'times[1024]/D')
-t.Branch("voltages", vs, 'voltages[1024]/D')
 
-READ_CHN = 2
+READ_CHN = [2,1] # can be a single integer or list of integers
 N_BINS = 1024 # number of timing bins per channel
-POLARITY = -1 # use -1 to invert. peaks must be positive
+POLARITY = 1 # use -1 to invert. peaks must be positive
+
+if type(READ_CHN) == int:
+    READ_CHN = [READ_CHN]
+ts = {c: np.zeros(1024, dtype='float') for c in READ_CHN}
+vs = {c: np.zeros(1024, dtype='float') for c in READ_CHN}
+t = r.TTree("Events","Events")
+for c in READ_CHN:
+    extra = "" if len(READ_CHN)==1 else "_"+str(c)
+    t.Branch("times"+extra, ts[c], 'times{0}[1024]/D'.format(extra))
+    t.Branch("voltages"+extra, vs[c], 'voltages{0}[1024]/D'.format(extra))
+        
 
 def getStr(fid, length):
     data = fid.read(length)
@@ -110,6 +116,11 @@ if n_boards > 1:
     print "ERROR: only support one board. Found {0} in file.".format(n_boards)
     exit(1)
 
+for c in READ_CHN:
+    if c not in channels:
+        print "ERROR: set to read channel {0}, but it isn't in the file!".format(c)
+        exit(1)
+
 bin_widths = bin_widths[0]
 n_chan = len(bin_widths)
 rates = []
@@ -137,6 +148,7 @@ while True:
     trig_cell = getShort(fid)
     # print "  Trigger Cell: "+str(trig_cell)
 
+    time0 = None
     for ichn in range(n_chan):
         chdr = getStr(fid, 4)
         if chdr != "C00"+str(channels[ichn]):
@@ -145,20 +157,26 @@ while True:
 
         scaler = getInt(fid)
         voltages = np.array(getShort(fid, N_BINS))
-        if READ_CHN != channels[ichn]:
+        if channels[ichn] not in READ_CHN:
             continue
         voltages = voltages/65535. * 1000 - 500 + rangeCtr
         times = np.roll(np.array(bin_widths[ichn]), N_BINS-trig_cell)
         times = np.cumsum(times)
         times = np.append([0], times[:-1])
         rates.append((times[-1]-times[0])/(times.size-1))
-        np.copyto(ts, times)
-        np.copyto(vs, voltages)
+
+        if time0 is None:
+            time0 = times[(N_BINS-trig_cell) % N_BINS]
+        else:
+            times -= (times[(N_BINS-trig_cell) % N_BINS] - time0)
+
+        np.copyto(ts[channels[ichn]], times)
+        np.copyto(vs[channels[ichn]], voltages)
         
-        t.Fill()
+    t.Fill()
 
 print "Measured sampling rate: {0:.2f} GHz".format(1.0/np.mean(rates))
-t.Write()
+t.Write("Events", r.TObject.kWriteDelete)
 fout.Close()
 
 

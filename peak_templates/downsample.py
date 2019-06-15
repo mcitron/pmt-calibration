@@ -3,10 +3,11 @@ import cPickle as pickle
 import matplotlib.pyplot as plt
 
 input_template = pickle.load(open("template_peak_70_75_2GHz.pkl", 'rb'))
+# input_template = pickle.load(open("template_peak_r7725_400_550_1GHz.pkl", 'rb'))
 
 input_freq = 2.0
-output_freq = 0.7
-outname = "template_peak_70_75_0p7GHz.pkl"
+output_freq = 1.0
+outname = "template_peak_r7725_400_550_0p7GHz.pkl"
 
 orig_times = np.arange(input_template.size)
 tmax = orig_times[np.argmax(input_template)]
@@ -29,7 +30,7 @@ for i in range(new_times.size):
 print orig_times.size
 print new_times.size
 
-pickle.dump(new_template, open(outname, 'wb'))
+# pickle.dump(new_template, open(outname, 'wb'))
 
 plt.plot(orig_times, input_template, 'b-')
 plt.plot(new_times, new_template, 'r-')

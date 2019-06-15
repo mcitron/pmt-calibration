@@ -6,8 +6,9 @@ import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
 
-# name = "r878_1250V_1p55V_20ns_50000evnts"
-name = "afterpulses/r878_1450V_2p7V_13ns_300Hz_0p7GHz_200000evnts"
+name = "r878_1450V_1p90V_13ns_300Hz_50000evnts"
+# name = "afterpulses/r7725_1450V_2p4V_13ns_300Hz_1p0GHz_500000evnts"
+# name = "r7725/r7725_1600V_1p89V_13ns_300Hz_20000evnts"
 
 outdir = "/home/users/bemarsh/public_html/milliqan/pmt_calib/plots/{0}/".format(name)
 
@@ -31,13 +32,16 @@ plt.figure(1)
 # tstart = 200
 # tend   = 310
 
-tstart = 140
-tend   = 290
+# tstart = 280
+# tend   = 350
+
+tstart = 230
+tend   = 330
 
 Nevt = t.GetEntries()
 # for i in range(Nevt):
 for i in range(50):
-# for i in range(501,502):
+# for i in range(267,268):
     t.GetEntry(i)
 
     vs = -voltages
@@ -62,16 +66,17 @@ for i in range(50):
     mint = np.amin(times)
     maxt = np.amax(times)
     plt.gca().set_xlim(mint-25, maxt+25)
-    # plt.gca().set_ylim(-50, np.amax(vs)*1.3)
-    plt.gca().set_ylim(-10, 50)
+    # plt.gca().set_xlim(mint-25, 425)
+    plt.gca().set_ylim(-1, np.amax(vs)*1.3)
+    # plt.gca().set_ylim(-10, 100)
     plt.plot([mint-25, maxt+25], [offset, offset], 'k-')
     plt.plot([mint-25, maxt+25], [offset+noise, offset+noise], 'k--')
     plt.plot([mint-25, maxt+25], [offset-noise, offset-noise], 'k--')
     plt.plot([times[istart],times[istart]], plt.gca().get_ylim(), 'k--')
     plt.plot([times[iend-1],times[iend-1]], plt.gca().get_ylim(), 'k--')
     plt.fill_between([mint-25, maxt+25], offset-noise, offset+noise, color='r', alpha=0.25)
-    # plt.text(0.10, 0.93, "Area = {0:.1f} mV$\cdot$nS".format(area), transform=plt.gca().transAxes)
-    plt.text(0.60, 0.93, "Area = {0:.1f} mV$\cdot$nS".format(area), transform=plt.gca().transAxes)
+    plt.text(0.10, 0.93, "Area = {0:.1f} mV$\cdot$nS".format(area), transform=plt.gca().transAxes)
+    # plt.text(0.60, 0.93, "Area = {0:.1f} mV$\cdot$nS".format(area), transform=plt.gca().transAxes)
 
     plt.savefig(outdir + "/rawevt{0:06d}.png".format(i))
 

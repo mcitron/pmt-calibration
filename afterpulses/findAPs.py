@@ -5,16 +5,24 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cPickle as pickle
 
-def findAPs(time, voltage, offset, noise, template, main_peak_start, main_peak_end, plot=False, outName=None, convolved=None):
+def findAPs(time, voltage, offset, noise, template, main_peak_start, main_peak_end, plot=False, outName=None, 
+            convolved=None, baseline=None, remove_neg_spikes=False):
+
     voltage = np.array(voltage)-offset
     if convolved is None:
         convolved = np.convolve(voltage, template[::-1], mode='valid')
+    if baseline is None:
+        baseline = np.zeros(time.size)
+    if remove_neg_spikes:
+        voltage = voltage*(voltage>baseline-4*noise) + baseline*(voltage<=baseline-4*noise)
+
     imax = np.argmax(template)
     convolved_time = time[imax:imax+convolved.size]
+    convolved_baseline = baseline[imax:imax+convolved.size]
 
     max_inds = []
     for i in range(convolved.size):
-        if convolved_time[i] > main_peak_end and convolved[i] >= np.amax(convolved[max(0,i-5):min(convolved.size,i+6)]) and convolved[i] > noise/2:
+        if convolved_time[i] > main_peak_end and convolved[i] >= np.amax(convolved[max(0,i-5):min(convolved.size,i+6)]) and convolved[i] > convolved_baseline[i] + noise*0.75:
             oi = i + imax
 
             # argmax finds the index of the maximum value
@@ -23,9 +31,9 @@ def findAPs(time, voltage, offset, noise, template, main_peak_start, main_peak_e
             end1, end2 = imaxnear, imaxnear
 
             # find the boundaries of the peak by tracing until we hit 0 or the endpoints of the waveform
-            while time[end1] > main_peak_end and (voltage[end1] > 0 or voltage[end1-1] > 0):
+            while time[end1] > main_peak_end and (voltage[end1] > baseline[end1]-noise/2):
                 end1 -= 1
-            while  end2 < voltage.size-1 and (voltage[end2] > 0 or voltage[end2+1] > 0):
+            while  end2 < voltage.size-1 and (voltage[end2] > baseline[end2]-noise/2):
                 end2 += 1
             
             # don't count if we've hit a boundary
@@ -46,7 +54,7 @@ def findAPs(time, voltage, offset, noise, template, main_peak_start, main_peak_e
                 else:
                     continue
 
-            area = np.trapz(voltage[end1:end2+1], time[end1:end2+1])
+            area = np.trapz(voltage[end1:end2+1]-baseline[end1:end2+1], time[end1:end2+1])
             max_inds.append((oi, (end1, end2), area))
 
 

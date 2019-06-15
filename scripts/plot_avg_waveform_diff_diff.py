@@ -7,10 +7,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cPickle as pickle
 
-fb0 = "r878b_1450V_2p7V_20ns_300Hz_100000evnts_-10_-5.pkl"
-fb1 = "r878b_1450V_2p7V_20ns_300Hz_100000evnts_-5_0.pkl"
-fs0 = "r878h_1450V_2p7V_20ns_300Hz_400000evnts_v2_-10_-5.pkl"
-fs1 = "r878h_1450V_2p7V_20ns_300Hz_400000evnts_v2_-5_0.pkl"
+fb0 = "avg_waveform_pickles/r878b_1450V_2p7V_20ns_300Hz_100000evnts_-5_0.pkl"
+fb1 = "avg_waveform_pickles/r878b_1450V_2p7V_20ns_300Hz_100000evnts_5_10.pkl"
+fs0 = "avg_waveform_pickles/r878h_1450V_2p7V_20ns_300Hz_400000evnts_v2_-5_0.pkl"
+fs1 = "avg_waveform_pickles/r878h_1450V_2p7V_20ns_300Hz_400000evnts_v2_5_10.pkl"
 
 tstart = 280
 tend = 390
@@ -49,16 +49,17 @@ plt.plot([tstart]*2, plt.gca().get_ylim(),'k--')
 plt.plot([tend]*2, plt.gca().get_ylim(),'k--')
 plt.legend()
 plt.xlabel("time (ns)")
-plt.ylabel("voltage (mV)")
+plt.ylabel("averaged voltage (mV)")
 # plt.savefig("/home/users/bemarsh/public_html/milliqan/pmt_calib/avg_waveforms/diff_diff/sb_0_5_-5_0.png")
 
 plt.figure()
 plt.plot(time, -(vs1-vs0)+(vb1-vb0),'g-', label="(LED on) - (LED blocked)")
 plt.plot([tstart]*2, plt.gca().get_ylim(),'k--')
 plt.plot([tend]*2, plt.gca().get_ylim(),'k--')
+plt.gca().set_ylim(-0.10, 0.10)
 plt.legend()
 plt.xlabel("time (ns)")
-plt.ylabel("voltage (mV)")
-# plt.savefig("/home/users/bemarsh/public_html/milliqan/pmt_calib/avg_waveforms/diff_diff/diff_0_5_-5_0.png")
+plt.ylabel("averaged voltage (mV)")
+plt.savefig("/home/users/bemarsh/public_html/milliqan/pmt_calib/avg_waveforms/diff_diff/diff_5_10_-5_0.png")
 
 plt.show()

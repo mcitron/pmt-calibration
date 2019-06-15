@@ -74,16 +74,16 @@ plt.plot(plt.gca().get_xlim(), [-noise, -noise], 'k--')
 plt.gca().set_ylim(-10,50)
 plt.show()
 
-# # save to pickle
-# bn = sys.argv[1].split(".")[0]
-# if sel == "":
-#     area1, area2 = "all", "all"
-# else:
-#     area1 = int(sel.split("&")[0].split(">")[1])
-#     area2 = int(sel.split("&")[-1].split("<")[1])
-# # fout = "avg_waveform_pickles/{0}_{1}_{2}_NTC.pkl".format(bn,area1,area2)
-# fout = "avg_waveform_pickles/{0}_{1}_{2}.pkl".format(bn,area1,area2)
-# pickle.dump({"v":voltages, "t":time, "n":noise}, open(fout, 'wb'))
+# save to pickle
+bn = sys.argv[1].split("/")[-1].split(".")[0]
+if sel == "":
+    area1, area2 = "all", "all"
+else:
+    area1 = int(sel.split("&")[0].split(">")[1])
+    area2 = int(sel.split("&")[-1].split("<")[1])
+# fout = "avg_waveform_pickles/{0}_{1}_{2}_NTC.pkl".format(bn,area1,area2)
+fout = "avg_waveform_pickles/{0}_{1}_{2}.pkl".format(bn,area1,area2)
+pickle.dump({"v":voltages, "t":time, "n":noise}, open(fout, 'wb'))
 
 # save to root file
 # fout = r.TFile("avg_waveforms.root","UPDATE")

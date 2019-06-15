@@ -5,24 +5,28 @@ import cPickle as pickle
 import matplotlib.pyplot as plt
 from findAPs import findAPs
 
-t0 = 140
-minamp = 50
+# t0 = 140
+t0 = 75
+minamp = 300
 # tend   = 290
 
 Nevt = -1
 plotFirst = 0
+make_output_tree = True
 
 f = r.TFile(sys.argv[1])
 t = f.Get("Events")
 print "Reading from:", sys.argv[1]
 
 outname = sys.argv[1].split(".")[0] + "_postprocessed.root"
+bn = sys.argv[1].split("/")[-1].split(".")[0]
 outdir = "/home/users/bemarsh/public_html/milliqan/aps/{0}".format(sys.argv[1].split("/")[-1].split(".")[0])
 os.system("mkdir -p "+outdir)
 os.system("cp /home/users/bemarsh/scripts/index.php "+outdir)
 
-print "Outputting to:", outname
-fout = r.TFile(outname, "RECREATE")
+if make_output_tree:
+    print "Outputting to:", outname
+    fout = r.TFile(outname, "RECREATE")
 
 if plotFirst>0:
     print "Plotting to:", outdir
@@ -71,8 +75,11 @@ b_AP_height = nt.Branch("afterpulse_height", AP_height, "afterpulse_height[n_aft
 b_AP_lowbound = nt.Branch("afterpulse_lowbound", AP_lowbound, "afterpulse_lowbound[n_afterpulses]/D")
 b_AP_highbound = nt.Branch("afterpulse_highbound", AP_highbound, "afterpulse_highbound[n_afterpulses]/D")
 
-template = pickle.load(open("../peak_templates/template_peak_70_75_1GHz.pkl", 'rb'))[::2]
+# template = pickle.load(open("../peak_templates/template_peak_70_75_1GHz.pkl", 'rb'))[::2]
+template = pickle.load(open("../peak_templates/template_peak_r7725_400_550_1GHz.pkl", 'rb'))[::1]
 template /= np.sum(template)
+
+baseline = pickle.load(open("scripts/baseline_pickles/{0}.pkl".format(bn), 'rb'))
 
 for ievt in range(Nevt):
 # for i in range(10000):
@@ -85,9 +92,11 @@ for ievt in range(Nevt):
     i0 = np.argmax(times > t0)
 
     offset[0] = np.median(vs[30:i0*3/4])
-    noise[0] = 0.5*(np.percentile(vs[30:i0*3/4],95) - np.percentile(vs[30:i0*3/4],5))
+    vs_nospikes = vs*(vs>-4)+offset*(vs<=-4)
+    noise[0] = 0.5*(np.percentile(vs_nospikes[30:i0*3/4],95) - np.percentile(vs_nospikes[30:i0*3/4],5))
 
     vs -= offset
+    vs_nospikes = vs*(vs>baseline-4*noise)+baseline*(vs<=baseline-4*noise)
 
     istart = np.argmax(vs[i0:] > minamp) + i0
     iend = istart
@@ -97,8 +106,9 @@ for ievt in range(Nevt):
         iend += 1
     tstart[0] = times[istart]
     tend[0] = times[iend]
-    if tstart[0]<50:
-        raise Exception("tstart shouldn't be this low! {0} {1}".format(tstart[0], ievt))
+    if tstart[0]<30:
+        print "WARNING: tstart shouldn't be this low! {0} {1}".format(tstart[0], ievt)
+        continue
     if tstart[0]>300:
         raise Exception("tstart shouldn't be this high! {0} {1}".format(tstart[0], ievt))
     # if tend[0]>450:
@@ -106,7 +116,7 @@ for ievt in range(Nevt):
 
     area[0] = np.trapz(vs[istart:iend], times[istart:iend])
 
-    convolved = np.convolve(vs, template[::-1], mode='valid')
+    convolved = np.convolve(vs_nospikes, template[::-1], mode='valid')
     imax = np.argmax(template)
     convolved_time = times[imax:imax+convolved.size]
     icstart = np.argmax(convolved_time>tstart[0] + times[0])
@@ -125,7 +135,7 @@ for ievt in range(Nevt):
     smoothed_max[0] = cmax
     tmax[0] = convolved_time[icmax]
 
-    peaks = findAPs(times, vs, 0, noise[0], template, tstart[0], tend[0], convolved=convolved)
+    peaks = findAPs(times, vs, 0, noise[0], template, tstart[0], tend[0], convolved=convolved, baseline=baseline, remove_neg_spikes=True)
     n_APs[0] = len(peaks)
     for i in range(len(peaks)):
         idx = peaks[i][0]
@@ -141,16 +151,21 @@ for ievt in range(Nevt):
     if ievt < plotFirst:
         plt.clf()
         plt.plot(times,vs+offset[0],color="red")
-        plt.axhspan(offset[0]-noise[0],offset[0]+noise[0],color='red',alpha=0.3)
         plt.axvline(tstart,ls="dashed",color="black")
         plt.axvline(tend,ls="dashed",color="black")
-        plt.axhline(offset[0],ls="dashed",color="black")
-        plt.axhline(offset[0]-noise[0],ls="dashed",color="black",lw=1.2)
-        plt.axhline(offset[0]+noise[0],ls="dashed",color="black",lw=1.2)
+        # plt.axhspan(offset[0]-noise[0],offset[0]+noise[0],color='red',alpha=0.3)
+        # plt.axhline(offset[0],ls="dashed",color="black")
+        # plt.axhline(offset[0]-noise[0],ls="dashed",color="black",lw=1.2)
+        # plt.axhline(offset[0]+noise[0],ls="dashed",color="black",lw=1.2)
+        plt.plot(times, baseline+offset[0], 'k--')
+        plt.plot(times, baseline+offset[0]+noise[0], 'k--')
+        plt.plot(times, baseline+offset[0]-noise[0], 'k--')
+        plt.fill_between(times, baseline+offset[0]+noise[0], baseline+offset[0]-noise[0], color='r', alpha=0.3)
         plt.plot(convolved_time, convolved+offset[0], 'b-', linewidth=2)
         plt.plot(times[:template.size], template*75+offset[0], 'g-', linewidth=2)
         plt.xlim(0,times[-1])
         plt.xlabel('Time (ns)')
+        # plt.ylim(-5,100)
         plt.ylim(-5,25)
         plt.ylabel('Vout (mV)')
 
@@ -164,7 +179,7 @@ for ievt in range(Nevt):
             ypos = np.amax(vs[end1:end2]) + offset[0]
             ypos = min(ypos, 22.5)
             plt.text(np.mean([times[end1],times[end2]]), ypos+0.4, "{0:.1f}".format(AP_area[j]), fontsize='medium', horizontalalignment='center')
-            plt.fill_between([times[end1],times[end2]],[offset[0]]*2,[ypos]*2,color="k",alpha=0.2)
+            plt.fill_between(times[end1:end2+1],baseline[end1:end2+1]+offset[0],[ypos]*(end2-end1+1),color="k",alpha=0.2)
             
 
         plt.savefig(outdir+"/wavform{0:05d}.png".format(ievt))
@@ -185,6 +200,8 @@ for ievt in range(Nevt):
     b_AP_lowbound.Fill()
     b_AP_highbound.Fill()
 
-nt.Write("Events",r.TObject.kWriteDelete)
-fout.Close()
+if make_output_tree:
+    nt.Write("Events",r.TObject.kWriteDelete)
+    fout.Close()
+
 f.Close()

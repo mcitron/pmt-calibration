@@ -23,7 +23,7 @@ outdir = "/nfs-7/userdata/bemarsh/milliqan/pmt_calib/test"
 fin = indir+"/{0}.dat".format(name)
 fout = r.TFile(outdir+"/{0}.root".format(name), "RECREATE")
 
-READ_CHN = [2,1] # can be a single integer or list of integers
+READ_CHN = 2 # can be a single integer or list of integers
 N_BINS = 1024 # number of timing bins per channel
 POLARITY = 1 # use -1 to invert. peaks must be positive
 
@@ -160,6 +160,7 @@ while True:
         if channels[ichn] not in READ_CHN:
             continue
         voltages = voltages/65535. * 1000 - 500 + rangeCtr
+        voltages *= POLARITY
         times = np.roll(np.array(bin_widths[ichn]), N_BINS-trig_cell)
         times = np.cumsum(times)
         times = np.append([0], times[:-1])
